@@ -35,8 +35,9 @@ async def produce_logs():
                 log_dict = parse_log_line(line)
 
                 # Insert into MongoDB
-                collection.insert_one(log_dict)
-
+                result = collection.insert_one(log_dict)
+                
+                log_dict["_id"] = str(result.inserted_id)
                 # Send to group
                 await channel_layer.group_send(
                     "logs_group",
@@ -60,5 +61,6 @@ def parse_log_line(line):
 
 def start_log_producer():
     """Start the background async task."""
-    loop = asyncio.get_event_loop()
-    loop.create_task(produce_logs())
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(produce_logs())
